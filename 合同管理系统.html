@@ -810,7 +810,7 @@ function renderSettings() {
     <div class="setting-item"><div class="setting-info"><label>存储方式</label><p class="setting-desc">当前数据存储在浏览器 localStorage 中</p></div><div class="setting-control"><span style="font-size:13px;color:var(--text-tertiary)">浏览器本地存储</span></div></div>
   </div>
   <div class="settings-section"><h3>关于系统</h3>
-    <div class="about-info"><p><strong>合同管理系统</strong> v1.0.0 (HTML版)</p><p>纯前端实现，数据存储在浏览器 localStorage</p><p>支持导出/导入 JSON 数据包进行备份和迁移</p></div>
+    <div class="about-info"><p><strong>index</strong> v1.0.0 (HTML版)</p><p>纯前端实现，数据存储在浏览器 localStorage</p><p>支持导出/导入 JSON 数据包进行备份和迁移</p></div>
   </div>
   <div class="settings-section"><h3>操作日志（最近 10 条）</h3>
     <div class="table-wrapper"><table><thead><tr><th>操作</th><th>对象</th><th>详情</th><th>操作人</th><th>时间</th></tr></thead><tbody>${logs.slice(0,10).map(l=>`<tr><td><span style="display:inline-block;padding:1px 6px;border-radius:3px;font-size:11px;font-weight:500;${l.action==='新增'?'background:#f6ffed;color:#52c41a':l.action==='修改'?'background:#e6f4ff;color:#1890ff':l.action==='删除'?'background:#fff2f0;color:#ff4d4f':'background:#fff7e6;color:#fa8c16'}">${l.action}</span></td><td>${l.target}</td><td>${l.detail}</td><td>${l.operator}</td><td class="td-mono">${l.createdAt}</td></tr>`).join('')}</tbody></table></div>
