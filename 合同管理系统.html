@@ -1,0 +1,825 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>合同管理系统</title>
+<style>
+* { margin: 0; padding: 0; box-sizing: border-box; }
+:root {
+  --primary: #1890ff;
+  --primary-hover: #40a9ff;
+  --success: #52c41a;
+  --warning: #faad14;
+  --danger: #ff4d4f;
+  --text-primary: #262626;
+  --text-secondary: #595959;
+  --text-tertiary: #8c8c8c;
+  --bg-base: #f5f5f5;
+  --bg-white: #ffffff;
+  --border-color: #e8e8e8;
+  --sidebar-width: 220px;
+}
+body {
+  font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', 'PingFang SC', 'Hiragino Sans GB', 'Microsoft YaHei', sans-serif;
+  font-size: 14px; color: var(--text-primary); background: var(--bg-base); line-height: 1.5;
+}
+a { text-decoration: none; color: inherit; }
+button { cursor: pointer; border: none; outline: none; font-family: inherit; font-size: inherit; }
+input, select, textarea { font-family: inherit; font-size: inherit; outline: none; }
+.layout { display: flex; min-height: 100vh; }
+.sidebar { width: var(--sidebar-width); background: var(--bg-white); border-right: 1px solid var(--border-color); display: flex; flex-direction: column; position: fixed; top: 0; left: 0; bottom: 0; z-index: 100; overflow-y: auto; }
+.sidebar-header { padding: 20px 16px; border-bottom: 1px solid var(--border-color); }
+.app-title { font-size: 18px; font-weight: 600; color: var(--primary); }
+.sidebar-nav { padding: 8px; flex: 1; }
+.nav-item { display: flex; align-items: center; padding: 10px 16px; border-radius: 6px; margin-bottom: 2px; color: var(--text-secondary); transition: all 0.2s; cursor: pointer; }
+.nav-item:hover { background: #f0f7ff; color: var(--primary); }
+.nav-item-active { background: #e6f4ff; color: var(--primary); font-weight: 500; }
+.nav-icon { margin-right: 10px; font-size: 16px; }
+.nav-label { font-size: 14px; }
+.main-content { margin-left: var(--sidebar-width); flex: 1; padding: 24px; min-height: 100vh; }
+.page-header { display: flex; justify-content: space-between; align-items: center; margin-bottom: 20px; }
+.page-header h2 { font-size: 20px; font-weight: 600; }
+.btn-primary { background: var(--primary); color: white; padding: 8px 20px; border-radius: 6px; font-size: 14px; font-weight: 500; }
+.btn-primary:hover { background: var(--primary-hover); }
+.btn-back { background: #f5f5f5; color: var(--text-secondary); padding: 6px 16px; border-radius: 6px; font-size: 13px; }
+.btn-back:hover { background: #e8e8e8; }
+.btn-danger { background: #fff2f0; color: var(--danger); padding: 6px 16px; border-radius: 6px; font-size: 13px; border: 1px solid #ffccc7; }
+.btn-danger:hover { background: #ff4d4f; color: white; }
+.btn-link { background: none; color: var(--primary); font-size: 13px; padding: 4px 8px; cursor: pointer; border: none; }
+.btn-link:hover { color: var(--primary-hover); }
+.btn-cancel { background: #f5f5f5; color: var(--text-secondary); padding: 8px 24px; border-radius: 6px; }
+.btn-cancel:hover { background: #e8e8e8; }
+.btn-export { background: #f6ffed; color: var(--success); padding: 8px 20px; border-radius: 6px; font-size: 14px; border: 1px solid #b7eb8f; }
+.btn-export:hover { background: #d9f7be; }
+.stats-grid { display: grid; grid-template-columns: repeat(4, 1fr); gap: 16px; margin-bottom: 24px; }
+.stat-card { background: var(--bg-white); border-radius: 8px; padding: 20px; border: 1px solid var(--border-color); text-align: center; }
+.stat-value { font-size: 28px; font-weight: 700; margin-bottom: 4px; }
+.stat-label { font-size: 13px; color: var(--text-tertiary); }
+.stat-blue .stat-value { color: #1890ff; }
+.stat-orange .stat-value { color: #fa8c16; }
+.stat-red .stat-value { color: #ff4d4f; }
+.stat-green .stat-value { color: #52c41a; }
+.stat-cyan .stat-value { color: #13c2c2; }
+.stat-purple .stat-value { color: #722ed1; }
+.stat-gold .stat-value { color: #faad14; }
+.stat-pink .stat-value { color: #eb2f96; }
+.charts-row { display: grid; grid-template-columns: 1fr 1fr; gap: 16px; margin-bottom: 24px; }
+.chart-card { background: var(--bg-white); border-radius: 8px; padding: 20px; border: 1px solid var(--border-color); }
+.chart-card h3 { font-size: 15px; font-weight: 500; margin-bottom: 16px; }
+.bar-chart { display: flex; align-items: flex-end; gap: 16px; height: 220px; padding: 10px 20px; border-bottom: 1px solid #e8e8e8; }
+.bar-item { display: flex; flex-direction: column; align-items: center; flex: 1; height: 100%; justify-content: flex-end; }
+.bar-fill { width: 40px; max-width: 60px; border-radius: 6px 6px 0 0; background: linear-gradient(180deg, #1890ff 0%, #69c0ff 100%); box-shadow: 0 2px 8px rgba(24,144,255,0.3); transition: height 0.5s ease; }
+.bar-label { font-size: 12px; color: var(--text-secondary); margin-top: 10px; text-align: center; font-weight: 500; }
+.bar-value { font-size: 11px; color: var(--primary); margin-bottom: 6px; font-weight: 600; }
+.lists-row { display: grid; grid-template-columns: 1fr 1fr; gap: 16px; }
+.list-card { background: var(--bg-white); border-radius: 8px; padding: 20px; border: 1px solid var(--border-color); }
+.list-card h3 { font-size: 15px; font-weight: 500; margin-bottom: 12px; }
+.reminder-list { list-style: none; }
+.reminder-item { display: flex; align-items: center; padding: 10px 0; border-bottom: 1px solid #f5f5f5; gap: 12px; }
+.reminder-item:last-child { border-bottom: none; }
+.reminder-name { font-weight: 500; min-width: 100px; }
+.reminder-project { flex: 1; color: var(--text-secondary); font-size: 13px; }
+.reminder-days { color: var(--warning); font-weight: 500; font-size: 13px; white-space: nowrap; }
+.reminder-amount { color: var(--danger); font-weight: 500; font-size: 13px; white-space: nowrap; }
+.filter-bar { display: flex; gap: 12px; align-items: center; margin-bottom: 16px; background: var(--bg-white); padding: 12px 16px; border-radius: 8px; border: 1px solid var(--border-color); flex-wrap: wrap; }
+.filter-bar label { font-size: 13px; color: var(--text-secondary); }
+.search-input { flex: 1; min-width: 200px; padding: 8px 12px; border: 1px solid var(--border-color); border-radius: 6px; font-size: 14px; }
+.search-input:focus { border-color: var(--primary); }
+.filter-select { padding: 8px 12px; border: 1px solid var(--border-color); border-radius: 6px; font-size: 14px; background: white; min-width: 120px; }
+.filter-count { color: var(--text-tertiary); font-size: 13px; white-space: nowrap; }
+.table-wrapper { background: var(--bg-white); border-radius: 8px; border: 1px solid var(--border-color); overflow-x: auto; margin-bottom: 16px; }
+table { width: 100%; border-collapse: collapse; }
+th { background: #fafafa; padding: 10px 14px; text-align: left; font-size: 13px; font-weight: 500; color: var(--text-secondary); border-bottom: 1px solid var(--border-color); white-space: nowrap; }
+td { padding: 10px 14px; border-bottom: 1px solid #f5f5f5; font-size: 13px; }
+tbody tr:hover { background: #fafafa; }
+.td-customer { font-weight: 500; white-space: nowrap; }
+.td-mono { font-family: 'SF Mono', monospace; font-size: 12px; color: var(--text-secondary); }
+.text-green { color: var(--success); font-weight: 500; }
+.text-red { color: var(--danger); font-weight: 500; }
+.text-blue { color: var(--primary); font-weight: 500; }
+.key-badge { display: inline-block; background: #fff7e6; color: #fa8c16; font-size: 11px; padding: 1px 6px; border-radius: 3px; margin-left: 6px; }
+.status-tag { display: inline-block; padding: 2px 8px; border-radius: 4px; font-size: 12px; font-weight: 500; }
+.status-active { background: #e6fffb; color: #13c2c2; }
+.status-warning { background: #fff7e6; color: #fa8c16; }
+.status-danger { background: #fff2f0; color: #ff4d4f; }
+.status-terminated { background: #f5f5f5; color: #8c8c8c; }
+.status-renewed { background: #f6ffed; color: #52c41a; }
+.status-default { background: #f5f5f5; color: var(--text-secondary); }
+.modal-overlay { position: fixed; top: 0; left: 0; right: 0; bottom: 0; background: rgba(0,0,0,0.4); display: none; align-items: center; justify-content: center; z-index: 1000; }
+.modal-overlay.show { display: flex; }
+.modal { background: white; border-radius: 12px; padding: 28px; width: 520px; max-height: 90vh; overflow-y: auto; }
+.modal h3 { font-size: 18px; margin-bottom: 20px; }
+.form-item { margin-bottom: 16px; }
+.form-item label { display: block; font-size: 13px; color: var(--text-secondary); margin-bottom: 6px; }
+.form-item input, .form-item select, .form-item textarea { width: 100%; padding: 8px 12px; border: 1px solid var(--border-color); border-radius: 6px; font-size: 14px; }
+.form-item input:focus, .form-item select:focus { border-color: var(--primary); }
+.modal-actions { display: flex; gap: 12px; margin-top: 20px; }
+.contract-form { background: var(--bg-white); border-radius: 8px; border: 1px solid var(--border-color); padding: 24px; }
+.form-section { margin-bottom: 28px; }
+.form-section h3 { font-size: 15px; font-weight: 600; margin-bottom: 16px; padding-bottom: 8px; border-bottom: 1px solid #f0f0f0; }
+.form-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 16px; }
+.form-item-wide { grid-column: 1 / -1; }
+.form-actions { display: flex; gap: 12px; padding-top: 20px; border-top: 1px solid #f0f0f0; }
+.detail-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 16px; margin-bottom: 16px; }
+.detail-card { background: var(--bg-white); border-radius: 8px; border: 1px solid var(--border-color); padding: 20px; margin-bottom: 16px; }
+.detail-card h3 { font-size: 15px; font-weight: 600; margin-bottom: 16px; padding-bottom: 8px; border-bottom: 1px solid #f0f0f0; }
+.detail-card.full-width { grid-column: 1 / -1; }
+.info-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 12px; }
+.info-item { display: flex; flex-direction: column; gap: 4px; }
+.info-label { font-size: 12px; color: var(--text-tertiary); }
+.info-value { font-size: 14px; }
+.amount-summary { display: flex; gap: 24px; margin-bottom: 16px; }
+.amount-item { display: flex; flex-direction: column; align-items: center; }
+.amount-value { font-size: 22px; font-weight: 700; color: var(--primary); }
+.amount-green .amount-value { color: var(--success); }
+.amount-red .amount-value { color: var(--danger); }
+.amount-label { font-size: 12px; color: var(--text-tertiary); margin-top: 4px; }
+.progress-bar { height: 8px; background: #f0f0f0; border-radius: 4px; overflow: hidden; }
+.progress-fill { height: 100%; background: var(--success); border-radius: 4px; }
+.progress-text { font-size: 12px; color: var(--text-tertiary); margin-top: 6px; text-align: right; }
+.empty-text { color: var(--text-tertiary); text-align: center; padding: 20px; }
+.header-actions { display: flex; gap: 8px; }
+.expiring-summary { display: grid; grid-template-columns: repeat(4, 1fr); gap: 16px; margin-bottom: 20px; }
+.summary-item { background: var(--bg-white); border-radius: 8px; padding: 20px; text-align: center; border: 1px solid var(--border-color); }
+.summary-value { font-size: 32px; font-weight: 700; display: block; }
+.summary-label { font-size: 13px; color: var(--text-tertiary); }
+.summary-red .summary-value { color: #ff4d4f; }
+.summary-orange .summary-value { color: #fa8c16; }
+.summary-yellow .summary-value { color: #faad14; }
+.summary-dark .summary-value { color: #8c8c8c; }
+.days-badge { display: inline-block; padding: 2px 8px; border-radius: 4px; font-size: 12px; font-weight: 600; }
+.days-critical { background: #fff2f0; color: #ff4d4f; }
+.days-warning-badge { background: #fff7e6; color: #fa8c16; }
+.days-normal { background: #e6f4ff; color: #1890ff; }
+.section-title { font-size: 15px; font-weight: 600; margin-bottom: 12px; margin-top: 16px; }
+.section-danger { color: var(--danger); }
+.row-expired { background: #fff2f0; }
+.payment-summary { display: grid; grid-template-columns: repeat(4, 1fr); gap: 16px; margin-bottom: 16px; }
+.pay-stat { background: var(--bg-white); border-radius: 8px; padding: 20px; text-align: center; border: 1px solid var(--border-color); }
+.pay-stat-value { font-size: 24px; font-weight: 700; display: block; color: var(--primary); }
+.pay-stat-label { font-size: 13px; color: var(--text-tertiary); }
+.pay-stat-green .pay-stat-value { color: var(--success); }
+.pay-stat-red .pay-stat-value { color: var(--danger); }
+.mini-progress { display: inline-block; width: 60px; height: 6px; background: #f0f0f0; border-radius: 3px; overflow: hidden; vertical-align: middle; margin-right: 6px; }
+.mini-progress-fill { height: 100%; background: var(--success); border-radius: 3px; }
+.progress-pct { font-size: 12px; color: var(--text-tertiary); }
+.customers-layout { display: grid; grid-template-columns: 300px 1fr; gap: 16px; min-height: 600px; }
+.customer-list-panel { background: var(--bg-white); border-radius: 8px; border: 1px solid var(--border-color); overflow-y: auto; max-height: 80vh; }
+.panel-header { padding: 14px 16px; font-weight: 600; font-size: 14px; border-bottom: 1px solid var(--border-color); position: sticky; top: 0; background: white; }
+.customer-item { padding: 12px 16px; border-bottom: 1px solid #f5f5f5; cursor: pointer; }
+.customer-item:hover { background: #fafafa; }
+.customer-item-active { background: #e6f4ff !important; border-left: 3px solid var(--primary); }
+.customer-item-name { font-weight: 500; font-size: 14px; margin-bottom: 4px; }
+.customer-item-meta { font-size: 12px; color: var(--text-tertiary); }
+.customer-detail-panel { min-width: 0; }
+.empty-panel { display: flex; align-items: center; justify-content: center; height: 300px; background: var(--bg-white); border-radius: 8px; border: 1px solid var(--border-color); color: var(--text-tertiary); }
+.customer-info-card, .customer-contracts-card { background: var(--bg-white); border-radius: 8px; border: 1px solid var(--border-color); padding: 20px; margin-bottom: 16px; }
+.customer-info-card h3 { font-size: 18px; margin-bottom: 16px; }
+.customer-meta-grid { display: grid; grid-template-columns: 1fr 1fr 1fr; gap: 12px; }
+.customer-meta-grid > div { display: flex; flex-direction: column; gap: 4px; }
+.meta-label { font-size: 12px; color: var(--text-tertiary); }
+.ie-section { margin-bottom: 32px; }
+.ie-section h3 { font-size: 16px; font-weight: 600; margin-bottom: 16px; }
+.ie-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(220px, 1fr)); gap: 12px; }
+.ie-card { background: var(--bg-white); border-radius: 8px; border: 1px solid var(--border-color); padding: 20px; cursor: pointer; }
+.ie-card:hover { border-color: var(--primary); box-shadow: 0 2px 8px rgba(24,144,255,0.1); }
+.ie-icon { font-size: 28px; margin-bottom: 8px; }
+.ie-title { font-size: 14px; font-weight: 600; margin-bottom: 4px; }
+.ie-desc { font-size: 12px; color: var(--text-tertiary); }
+.ie-count { font-size: 12px; color: var(--primary); margin-top: 6px; }
+.backup-stats { display: grid; grid-template-columns: repeat(5, 1fr); gap: 12px; margin-bottom: 20px; }
+.backup-stat-card { background: var(--bg-white); border-radius: 8px; border: 1px solid var(--border-color); padding: 16px; text-align: center; }
+.backup-stat-value { font-size: 24px; font-weight: 700; color: var(--primary); display: block; }
+.backup-stat-label { font-size: 12px; color: var(--text-tertiary); }
+.backup-actions { display: flex; gap: 12px; margin-bottom: 16px; }
+.backup-info { background: #fffbe6; border: 1px solid #ffe58f; border-radius: 8px; padding: 12px 16px; margin-bottom: 24px; }
+.backup-info p { font-size: 13px; color: #8c6d1f; margin-bottom: 4px; }
+.backup-type { display: inline-block; padding: 2px 8px; border-radius: 4px; font-size: 12px; }
+.type-auto { background: #e6f4ff; color: var(--primary); }
+.type-manual { background: #f6ffed; color: var(--success); }
+.settings-section { background: var(--bg-white); border-radius: 8px; border: 1px solid var(--border-color); padding: 20px; margin-bottom: 16px; }
+.settings-section h3 { font-size: 15px; font-weight: 600; margin-bottom: 16px; padding-bottom: 8px; border-bottom: 1px solid #f0f0f0; }
+.setting-item { display: flex; justify-content: space-between; align-items: center; padding: 12px 0; border-bottom: 1px solid #f5f5f5; }
+.setting-item:last-child { border-bottom: none; }
+.setting-info label { font-size: 14px; font-weight: 500; display: block; margin-bottom: 2px; }
+.setting-desc { font-size: 12px; color: var(--text-tertiary); }
+.setting-control select { padding: 6px 12px; border: 1px solid var(--border-color); border-radius: 6px; font-size: 14px; }
+.switch { position: relative; display: inline-block; width: 44px; height: 24px; }
+.switch input { opacity: 0; width: 0; height: 0; }
+.slider-sw { position: absolute; cursor: pointer; top: 0; left: 0; right: 0; bottom: 0; background: #ccc; border-radius: 24px; transition: 0.3s; }
+.slider-sw:before { content: ""; position: absolute; height: 18px; width: 18px; left: 3px; bottom: 3px; background: white; border-radius: 50%; transition: 0.3s; }
+.switch input:checked + .slider-sw { background: var(--primary); }
+.switch input:checked + .slider-sw:before { transform: translateX(20px); }
+.about-info p { font-size: 13px; color: var(--text-secondary); margin-bottom: 6px; }
+.attachments-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(320px, 1fr)); gap: 12px; }
+.attachment-card { display: flex; gap: 12px; background: var(--bg-white); border-radius: 8px; border: 1px solid var(--border-color); padding: 16px; cursor: pointer; }
+.attachment-card:hover { box-shadow: 0 2px 8px rgba(0,0,0,0.06); border-color: var(--primary); }
+.attachment-icon { font-size: 32px; flex-shrink: 0; }
+.attachment-info { flex: 1; min-width: 0; }
+.attachment-name { font-weight: 500; font-size: 14px; margin-bottom: 4px; }
+.attachment-meta { display: flex; gap: 12px; font-size: 12px; color: var(--text-tertiary); margin-bottom: 4px; }
+.attachment-contract { font-size: 12px; color: var(--text-secondary); }
+.attachment-date { font-size: 11px; color: var(--text-tertiary); margin-top: 4px; }
+.checkbox-inline { display: flex; align-items: center; gap: 6px; font-size: 14px; cursor: pointer; }
+.timeline { position: relative; padding-left: 20px; }
+.timeline-item { position: relative; padding-bottom: 20px; padding-left: 16px; border-left: 2px solid #e8e8e8; }
+.timeline-item:last-child { border-left-color: transparent; }
+.timeline-dot { position: absolute; left: -7px; top: 4px; width: 12px; height: 12px; border-radius: 50%; background: var(--primary); border: 2px solid white; box-shadow: 0 0 0 2px var(--primary); }
+.timeline-content { padding-left: 8px; }
+.timeline-header { display: flex; gap: 12px; align-items: center; margin-bottom: 6px; }
+.timeline-type { background: #e6f4ff; color: var(--primary); padding: 2px 8px; border-radius: 4px; font-size: 12px; font-weight: 500; }
+.timeline-date { font-size: 12px; color: var(--text-tertiary); }
+.timeline-person { font-size: 12px; color: var(--text-secondary); }
+.timeline-text { font-size: 14px; line-height: 1.6; }
+.timeline-next { font-size: 12px; color: var(--warning); margin-top: 4px; }
+</style>
+</head>
+<body>
+<div class="layout">
+  <aside class="sidebar">
+    <div class="sidebar-header"><h1 class="app-title">客户管理系统</h1></div>
+    <nav class="sidebar-nav" id="sidebar-nav"></nav>
+  </aside>
+  <main class="main-content" id="main-content"></main>
+</div>
+<div class="modal-overlay" id="modal-overlay" onclick="closeModal()">
+  <div class="modal" id="modal-content" onclick="event.stopPropagation()"></div>
+</div>
+</body>
+</html>
+<script>
+// ===== DATA =====
+const DATA_KEY = 'contract_mgmt_data';
+function loadData() {
+  const saved = localStorage.getItem(DATA_KEY);
+  if (saved) return JSON.parse(saved);
+  return getDefaultData();
+}
+function saveData() { localStorage.setItem(DATA_KEY, JSON.stringify(appData)); }
+function getDefaultData() {
+  return {
+    contracts: [
+      {id:'1',customerName:'北京市公安局',projectName:'舆情监测系统建设',contractNo:'HT-2025-001',province:'北京',city:'北京',district:'朝阳区',region:'华北',contractAmount:580000,receivedAmount:350000,unpaidAmount:230000,startDate:'2025-01-15',endDate:'2026-01-14',status:'服务中',contactPerson:'张主任',contactPhone:'13800138001',contactWechat:'zhang_zhuren',salesPerson:'李明',servicePerson:'王芳',remark:'重点客户，需要每日汇报',specialRequirements:'需要7x24小时应急响应',isKeyCustomer:true,isRenewalCustomer:false,contractType:'续签',renewalStatus:'未沟通',createdAt:'2025-01-10',updatedAt:'2025-03-20'},
+      {id:'2',customerName:'天津市住建委',projectName:'网络舆情服务',contractNo:'HT-2025-002',province:'天津',city:'天津',district:'和平区',region:'华北',contractAmount:320000,receivedAmount:320000,unpaidAmount:0,startDate:'2025-03-01',endDate:'2026-06-15',status:'即将到期',contactPerson:'刘处长',contactPhone:'13900139002',contactWechat:'liu_chuzhang',salesPerson:'赵强',servicePerson:'陈静',remark:'',specialRequirements:'每周提供周报',isKeyCustomer:false,isRenewalCustomer:true,contractType:'新签',renewalStatus:'已沟通',createdAt:'2025-02-20',updatedAt:'2025-05-10'},
+      {id:'3',customerName:'山东省教育厅',projectName:'教育舆情监测平台',contractNo:'HT-2025-003',province:'山东',city:'济南',district:'历下区',region:'华东',contractAmount:450000,receivedAmount:200000,unpaidAmount:250000,startDate:'2025-04-01',endDate:'2026-03-31',status:'服务中',contactPerson:'孙科长',contactPhone:'13700137003',contactWechat:'',salesPerson:'李明',servicePerson:'张伟',remark:'对数据准确性要求高',specialRequirements:'每月提供月度分析报告',isKeyCustomer:true,isRenewalCustomer:false,contractType:'新签',renewalStatus:'未沟通',createdAt:'2025-03-15',updatedAt:'2025-04-01'},
+      {id:'4',customerName:'江苏省公安厅',projectName:'网安舆情预警系统',contractNo:'HT-2024-015',province:'江苏',city:'南京',district:'鼓楼区',region:'华东',contractAmount:780000,receivedAmount:780000,unpaidAmount:0,startDate:'2024-06-01',endDate:'2025-05-31',status:'已到期',contactPerson:'王副处',contactPhone:'13600136004',contactWechat:'wang_fuchu',salesPerson:'赵强',servicePerson:'王芳',remark:'已到期，等待续约确认',specialRequirements:'',isKeyCustomer:true,isRenewalCustomer:true,contractType:'续签',renewalStatus:'有意向',createdAt:'2024-05-20',updatedAt:'2025-05-15'},
+      {id:'5',customerName:'河北省委宣传部',projectName:'宣传舆情分析服务',contractNo:'HT-2025-004',province:'河北',city:'石家庄',district:'长安区',region:'华北',contractAmount:260000,receivedAmount:130000,unpaidAmount:130000,startDate:'2025-02-01',endDate:'2026-01-31',status:'服务中',contactPerson:'马主任',contactPhone:'13500135005',contactWechat:'ma_zhuren',salesPerson:'李明',servicePerson:'陈静',remark:'',specialRequirements:'需要专人群推送',isKeyCustomer:false,isRenewalCustomer:false,contractType:'新签',renewalStatus:'未沟通',createdAt:'2025-01-25',updatedAt:'2025-02-01'},
+      {id:'6',customerName:'广东省网信办',projectName:'网络生态监测项目',contractNo:'HT-2025-005',province:'广东',city:'广州',district:'天河区',region:'华南',contractAmount:920000,receivedAmount:460000,unpaidAmount:460000,startDate:'2025-01-01',endDate:'2025-12-31',status:'服务中',contactPerson:'黄处长',contactPhone:'13400134006',contactWechat:'huang_cz',salesPerson:'赵强',servicePerson:'张伟',remark:'高价值客户，服务质量要求极高',specialRequirements:'每日预警+周报+月报+应急',isKeyCustomer:true,isRenewalCustomer:true,contractType:'续签',renewalStatus:'未沟通',createdAt:'2024-12-20',updatedAt:'2025-05-01'}
+    ],
+    payments: [
+      {id:'p1',contractId:'1',amount:200000,paymentDate:'2025-02-01',method:'银行转账',remark:'首付款',createdAt:'2025-02-01'},
+      {id:'p2',contractId:'1',amount:150000,paymentDate:'2025-04-15',method:'银行转账',remark:'第二期',createdAt:'2025-04-15'},
+      {id:'p3',contractId:'2',amount:320000,paymentDate:'2025-03-10',method:'银行转账',remark:'全款',createdAt:'2025-03-10'},
+      {id:'p4',contractId:'3',amount:200000,paymentDate:'2025-04-10',method:'银行转账',remark:'首付款50%',createdAt:'2025-04-10'},
+      {id:'p5',contractId:'4',amount:400000,paymentDate:'2024-06-15',method:'银行转账',remark:'首付款',createdAt:'2024-06-15'},
+      {id:'p6',contractId:'4',amount:380000,paymentDate:'2024-12-20',method:'银行转账',remark:'尾款',createdAt:'2024-12-20'},
+      {id:'p7',contractId:'6',amount:460000,paymentDate:'2025-01-15',method:'银行转账',remark:'首付款50%',createdAt:'2025-01-15'}
+    ],
+    followUps: [
+      {id:'f1',customerId:'1',contractId:'1',type:'客户拜访',content:'拜访张主任，沟通服务满意度，客户对预警速度满意',followPerson:'李明',nextFollowDate:'2025-06-15',createdAt:'2025-05-10'},
+      {id:'f2',customerId:'1',contractId:'1',type:'需求沟通',content:'客户提出增加短视频监测需求',followPerson:'王芳',nextFollowDate:'2025-05-25',createdAt:'2025-05-05'},
+      {id:'f3',customerId:'4',contractId:'4',type:'续费沟通',content:'与王副处沟通续约事宜，对方表示需要走内部流程',followPerson:'赵强',nextFollowDate:'2025-06-01',createdAt:'2025-05-12'},
+      {id:'f4',customerId:'6',contractId:'6',type:'客户拜访',content:'拜访黄处长，汇报本月服务情况',followPerson:'张伟',nextFollowDate:'2025-06-05',createdAt:'2025-05-15'}
+    ],
+    attachments: [
+      {id:'a1',contractId:'1',fileName:'合同原件-北京公安局.pdf',fileType:'pdf',fileSize:2048000,category:'合同原件',remark:'盖章版',filePath:'/attachments/1/contract.pdf',createdAt:'2025-01-10'},
+      {id:'a2',contractId:'1',fileName:'报价单.xlsx',fileType:'xlsx',fileSize:156000,category:'报价单',remark:'',filePath:'/attachments/1/quote.xlsx',createdAt:'2025-01-08'},
+      {id:'a3',contractId:'3',fileName:'合同原件-山东教育厅.pdf',fileType:'pdf',fileSize:1890000,category:'合同原件',remark:'',filePath:'/attachments/3/contract.pdf',createdAt:'2025-03-15'},
+      {id:'a4',contractId:'6',fileName:'服务方案-广东网信办.docx',fileType:'docx',fileSize:890000,category:'客户资料',remark:'技术方案',filePath:'/attachments/6/plan.docx',createdAt:'2024-12-18'}
+    ],
+    operationLogs: [
+      {id:'l1',action:'新增',target:'合同',detail:'新增合同：北京市公安局-舆情监测系统建设',operator:'本机用户',createdAt:'2025-01-10 09:30:00'},
+      {id:'l2',action:'新增',target:'合同',detail:'新增合同：天津市住建委-网络舆情服务',operator:'本机用户',createdAt:'2025-02-20 14:20:00'},
+      {id:'l3',action:'收款',target:'收款记录',detail:'北京市公安局 收款 20万元',operator:'本机用户',createdAt:'2025-02-01 10:00:00'},
+      {id:'l4',action:'修改',target:'合同',detail:'修改合同状态：江苏省公安厅 → 已到期',operator:'本机用户',createdAt:'2025-05-15 08:00:00'}
+    ]
+  };
+}
+let appData = loadData();
+
+// ===== UTILS =====
+function genId() { return Date.now().toString(36) + Math.random().toString(36).slice(2,8); }
+function now() { return new Date().toISOString().slice(0,19).replace('T',' '); }
+function today() { return new Date().toISOString().slice(0,10); }
+function formatWan(n) { return (n/10000).toFixed(1) + '万'; }
+function getDaysRemaining(endDate) {
+  const end = new Date(endDate); const now2 = new Date();
+  end.setHours(0,0,0,0); now2.setHours(0,0,0,0);
+  return Math.round((end - now2) / 86400000);
+}
+function getDaysServed(startDate) {
+  const start = new Date(startDate); const now2 = new Date();
+  start.setHours(0,0,0,0); now2.setHours(0,0,0,0);
+  return Math.round((now2 - start) / 86400000);
+}
+function getStatusClass(status) {
+  switch(status) {
+    case '服务中': return 'status-active';
+    case '即将到期': return 'status-warning';
+    case '已到期': return 'status-danger';
+    case '已终止': return 'status-terminated';
+    case '已续约': return 'status-renewed';
+    default: return 'status-default';
+  }
+}
+function getFileIcon(type) {
+  switch(type) { case 'pdf': return '📄'; case 'docx': case 'doc': return '📝'; case 'xlsx': case 'xls': return '📊'; case 'png': case 'jpg': case 'jpeg': return '🖼️'; default: return '📎'; }
+}
+function formatSize(bytes) { return bytes > 1048576 ? (bytes/1048576).toFixed(1)+' MB' : (bytes/1024).toFixed(0)+' KB'; }
+function escHtml(s) { const d = document.createElement('div'); d.textContent = s; return d.innerHTML; }
+
+// ===== NAVIGATION =====
+const menuItems = [
+  {id:'dashboard',label:'首页',icon:'📊'},
+  {id:'contracts',label:'合同列表',icon:'📋'},
+  {id:'expiring',label:'到期提醒',icon:'⏰'},
+  {id:'payments',label:'收款管理',icon:'💰'},
+  {id:'customers',label:'客户管理',icon:'👥'},
+  {id:'statistics',label:'统计分析',icon:'📈'},
+  {id:'attachments',label:'附件管理',icon:'📎'},
+  {id:'import-export',label:'导入导出',icon:'📤'},
+  {id:'backup',label:'备份恢复',icon:'💾'},
+  {id:'settings',label:'系统设置',icon:'⚙️'}
+];
+let currentPage = 'dashboard';
+let currentDetail = null;
+
+function initNav() {
+  const nav = document.getElementById('sidebar-nav');
+  nav.innerHTML = menuItems.map(m => `<div class="nav-item${m.id===currentPage?' nav-item-active':''}" onclick="navigate('${m.id}')"><span class="nav-icon">${m.icon}</span><span class="nav-label">${m.label}</span></div>`).join('');
+}
+function navigate(page, detail) {
+  currentPage = page;
+  currentDetail = detail || null;
+  initNav();
+  renderPage();
+}
+function closeModal() { document.getElementById('modal-overlay').classList.remove('show'); }
+function showModal(html) { document.getElementById('modal-content').innerHTML = html; document.getElementById('modal-overlay').classList.add('show'); }
+
+// ===== PAGE RENDERER =====
+function renderPage() {
+  const main = document.getElementById('main-content');
+  switch(currentPage) {
+    case 'dashboard': main.innerHTML = renderDashboard(); break;
+    case 'contracts': main.innerHTML = renderContractList(); break;
+    case 'contract-form': main.innerHTML = renderContractForm(); break;
+    case 'contract-detail': main.innerHTML = renderContractDetail(); break;
+    case 'expiring': main.innerHTML = renderExpiring(); break;
+    case 'payments': main.innerHTML = renderPayments(); break;
+    case 'customers': main.innerHTML = renderCustomers(); break;
+    case 'statistics': main.innerHTML = renderStatistics(); break;
+    case 'attachments': main.innerHTML = renderAttachments(); break;
+    case 'import-export': main.innerHTML = renderImportExport(); break;
+    case 'backup': main.innerHTML = renderBackup(); break;
+    case 'settings': main.innerHTML = renderSettings(); break;
+    default: main.innerHTML = renderDashboard();
+  }
+}
+
+// ===== DASHBOARD =====
+function renderDashboard() {
+  const c = appData.contracts;
+  const active = c.filter(x => x.status === '服务中').length;
+  const expiring = c.filter(x => { const d = getDaysRemaining(x.endDate); return d >= 0 && d <= 30 && x.status !== '已终止' && x.status !== '已续约'; });
+  const expired = c.filter(x => getDaysRemaining(x.endDate) < 0 && x.status !== '已终止' && x.status !== '已续约');
+  const unpaid = c.filter(x => x.unpaidAmount > 0);
+  const totalAmt = c.reduce((s,x) => s+x.contractAmount, 0);
+  const totalRcv = c.reduce((s,x) => s+x.receivedAmount, 0);
+  const totalUnp = c.reduce((s,x) => s+x.unpaidAmount, 0);
+  const keyCount = c.filter(x => x.isKeyCustomer).length;
+
+  // Region chart data
+  const regionMap = {};
+  c.forEach(x => { regionMap[x.region] = (regionMap[x.region]||0) + x.contractAmount; });
+  const regionData = Object.entries(regionMap).sort((a,b) => b[1]-a[1]);
+  const maxRegion = Math.max(...regionData.map(r=>r[1]), 1);
+
+  return `
+  <div class="page-header"><h2>首页仪表盘</h2></div>
+  <div class="stats-grid">
+    <div class="stat-card stat-blue"><div class="stat-value">${active}</div><div class="stat-label">服务中合同</div></div>
+    <div class="stat-card stat-orange"><div class="stat-value">${expiring.length}</div><div class="stat-label">即将到期</div></div>
+    <div class="stat-card stat-red"><div class="stat-value">${expired.length}</div><div class="stat-label">已到期未续约</div></div>
+    <div class="stat-card stat-green"><div class="stat-value">${formatWan(totalAmt)}</div><div class="stat-label">合同总额</div></div>
+    <div class="stat-card stat-cyan"><div class="stat-value">${formatWan(totalRcv)}</div><div class="stat-label">已收款</div></div>
+    <div class="stat-card stat-purple"><div class="stat-value">${formatWan(totalUnp)}</div><div class="stat-label">未收款</div></div>
+    <div class="stat-card stat-gold"><div class="stat-value">${c.length}</div><div class="stat-label">合同总数</div></div>
+    <div class="stat-card stat-pink"><div class="stat-value">${keyCount}</div><div class="stat-label">重点客户</div></div>
+  </div>
+  <div class="charts-row">
+    <div class="chart-card"><h3>区域合同额分布</h3>
+      <div class="bar-chart">${regionData.map(([name,amt]) => `<div class="bar-item"><div class="bar-value">${formatWan(amt)}</div><div class="bar-fill" style="height:${Math.max(amt/maxRegion*180, 20)}px"></div><div class="bar-label">${name}</div></div>`).join('')}</div>
+    </div>
+    <div class="chart-card"><h3>合同状态分布</h3>
+      <div style="padding:20px 0">${(() => { const sm={}; c.forEach(x=>{sm[x.status]=(sm[x.status]||0)+1}); return Object.entries(sm).map(([s,v])=>`<div style="display:flex;align-items:center;margin-bottom:10px"><span class="status-tag ${getStatusClass(s)}" style="min-width:70px;text-align:center">${s}</span><div style="flex:1;height:20px;background:#f0f0f0;border-radius:4px;margin:0 12px;overflow:hidden"><div style="height:100%;background:var(--primary);width:${v/c.length*100}%;border-radius:4px"></div></div><span style="font-size:13px;font-weight:600">${v}</span></div>`).join(''); })()}</div>
+    </div>
+  </div>
+  <div class="lists-row">
+    <div class="list-card"><h3>⏰ 到期提醒</h3>${expiring.length===0?'<p class="empty-text">暂无即将到期合同</p>':`<ul class="reminder-list">${expiring.map(x=>`<li class="reminder-item"><span class="reminder-name">${x.customerName}</span><span class="reminder-project">${x.projectName}</span><span class="reminder-days">剩余 ${getDaysRemaining(x.endDate)} 天</span></li>`).join('')}</ul>`}</div>
+    <div class="list-card"><h3>💰 未回款提醒</h3>${unpaid.length===0?'<p class="empty-text">暂无未回款合同</p>':`<ul class="reminder-list">${unpaid.map(x=>`<li class="reminder-item"><span class="reminder-name">${x.customerName}</span><span class="reminder-project">${x.projectName}</span><span class="reminder-amount">未收 ${formatWan(x.unpaidAmount)}</span></li>`).join('')}</ul>`}</div>
+  </div>`;
+}
+
+// ===== CONTRACT LIST =====
+function renderContractList() {
+  const c = appData.contracts;
+  return `
+  <div class="page-header"><h2>合同列表</h2><button class="btn-primary" onclick="navigate('contract-form')">+ 新增合同</button></div>
+  <div class="filter-bar">
+    <input class="search-input" id="cl-search" placeholder="搜索客户名称、项目名称、合同编号..." oninput="filterContracts()">
+    <select class="filter-select" id="cl-status" onchange="filterContracts()"><option value="">全部状态</option><option>未开始</option><option>服务中</option><option>即将到期</option><option>已到期</option><option>已终止</option><option>已续约</option></select>
+    <select class="filter-select" id="cl-region" onchange="filterContracts()"><option value="">全部战区</option><option>华北</option><option>华东</option><option>华南</option><option>华中</option><option>西南</option><option>西北</option><option>东北</option></select>
+    <span class="filter-count" id="cl-count">共 ${c.length} 条</span>
+  </div>
+  <div class="table-wrapper"><table><thead><tr><th>客户名称</th><th>项目名称</th><th>合同编号</th><th>战区</th><th>合同金额</th><th>已收款</th><th>未收款</th><th>服务周期</th><th>状态</th><th>销售</th><th>操作</th></tr></thead><tbody id="cl-tbody">${renderContractRows(c)}</tbody></table></div>`;
+}
+function renderContractRows(list) {
+  return list.map(c => {
+    const days = getDaysRemaining(c.endDate);
+    const svc = days < 0 ? `已过期 ${Math.abs(days)} 天` : `剩余 ${days} 天`;
+    return `<tr><td class="td-customer">${escHtml(c.customerName)}${c.isKeyCustomer?'<span class="key-badge">重点</span>':''}</td><td>${escHtml(c.projectName)}</td><td class="td-mono">${c.contractNo}</td><td>${c.region}</td><td class="td-amount">${formatWan(c.contractAmount)}</td><td class="td-amount text-green">${formatWan(c.receivedAmount)}</td><td class="td-amount${c.unpaidAmount>0?' text-red':''}">${c.unpaidAmount>0?formatWan(c.unpaidAmount):'-'}</td><td style="font-size:12px;color:var(--text-secondary)">${svc}</td><td><span class="status-tag ${getStatusClass(c.status)}">${c.status}</span></td><td>${c.salesPerson}</td><td><button class="btn-link" onclick="navigate('contract-detail','${c.id}')">详情</button></td></tr>`;
+  }).join('');
+}
+function filterContracts() {
+  const search = document.getElementById('cl-search').value;
+  const status = document.getElementById('cl-status').value;
+  const region = document.getElementById('cl-region').value;
+  const filtered = appData.contracts.filter(c => {
+    const ms = !search || c.customerName.includes(search) || c.projectName.includes(search) || c.contractNo.includes(search);
+    const mst = !status || c.status === status;
+    const mr = !region || c.region === region;
+    return ms && mst && mr;
+  });
+  document.getElementById('cl-tbody').innerHTML = renderContractRows(filtered);
+  document.getElementById('cl-count').textContent = `共 ${filtered.length} 条`;
+}
+
+// ===== CONTRACT FORM =====
+function renderContractForm() {
+  const id = currentDetail;
+  const c = id ? appData.contracts.find(x=>x.id===id) : null;
+  const title = c ? '编辑合同' : '新增合同';
+  const v = (field, def='') => c ? (c[field]||def) : def;
+  const regions = ['华北','华东','华南','华中','西南','西北','东北'];
+  const statuses = ['未开始','服务中','即将到期','已到期','已终止','已续约'];
+  const types = ['新签','续签','补充协议','临时项目'];
+  const renewals = ['未沟通','已沟通','有意向','无意向','已续约'];
+  return `
+  <div class="page-header"><h2>${title}</h2><button class="btn-back" onclick="navigate('contracts')">返回</button></div>
+  <div class="contract-form">
+    <div class="form-section"><h3>基本信息</h3><div class="form-grid">
+      <div class="form-item"><label>客户名称 *</label><input id="cf-customerName" value="${escHtml(v('customerName'))}" placeholder="请输入客户名称"></div>
+      <div class="form-item"><label>项目名称 *</label><input id="cf-projectName" value="${escHtml(v('projectName'))}" placeholder="请输入项目名称"></div>
+      <div class="form-item"><label>合同编号 *</label><input id="cf-contractNo" value="${escHtml(v('contractNo'))}" placeholder="例如 HT-2025-001"></div>
+      <div class="form-item"><label>合同类型</label><select id="cf-contractType">${types.map(t=>`<option${v('contractType','新签')===t?' selected':''}>${t}</option>`).join('')}</select></div>
+    </div></div>
+    <div class="form-section"><h3>地区信息</h3><div class="form-grid">
+      <div class="form-item"><label>省份</label><input id="cf-province" value="${escHtml(v('province'))}"></div>
+      <div class="form-item"><label>城市</label><input id="cf-city" value="${escHtml(v('city'))}"></div>
+      <div class="form-item"><label>区县</label><input id="cf-district" value="${escHtml(v('district'))}"></div>
+      <div class="form-item"><label>所属战区</label><select id="cf-region">${regions.map(r=>`<option${v('region','华北')===r?' selected':''}>${r}</option>`).join('')}</select></div>
+    </div></div>
+    <div class="form-section"><h3>金额信息</h3><div class="form-grid">
+      <div class="form-item"><label>合同金额（元）</label><input type="number" id="cf-contractAmount" value="${v('contractAmount',0)}"></div>
+      <div class="form-item"><label>已收款金额（元）</label><input type="number" id="cf-receivedAmount" value="${v('receivedAmount',0)}"></div>
+    </div></div>
+    <div class="form-section"><h3>服务周期</h3><div class="form-grid">
+      <div class="form-item"><label>开始时间</label><input type="date" id="cf-startDate" value="${v('startDate')}"></div>
+      <div class="form-item"><label>结束时间</label><input type="date" id="cf-endDate" value="${v('endDate')}"></div>
+      <div class="form-item"><label>合同状态</label><select id="cf-status">${statuses.map(s=>`<option${v('status','未开始')===s?' selected':''}>${s}</option>`).join('')}</select></div>
+      <div class="form-item"><label>续约状态</label><select id="cf-renewalStatus">${renewals.map(r=>`<option${v('renewalStatus','未沟通')===r?' selected':''}>${r}</option>`).join('')}</select></div>
+    </div></div>
+    <div class="form-section"><h3>联系人信息</h3><div class="form-grid">
+      <div class="form-item"><label>客户联系人</label><input id="cf-contactPerson" value="${escHtml(v('contactPerson'))}"></div>
+      <div class="form-item"><label>联系电话</label><input id="cf-contactPhone" value="${escHtml(v('contactPhone'))}"></div>
+      <div class="form-item"><label>微信/邮箱</label><input id="cf-contactWechat" value="${escHtml(v('contactWechat'))}"></div>
+    </div></div>
+    <div class="form-section"><h3>负责人</h3><div class="form-grid">
+      <div class="form-item"><label>销售负责人</label><input id="cf-salesPerson" value="${escHtml(v('salesPerson'))}"></div>
+      <div class="form-item"><label>服务负责人</label><input id="cf-servicePerson" value="${escHtml(v('servicePerson'))}"></div>
+    </div></div>
+    <div class="form-section"><h3>其他信息</h3><div class="form-grid">
+      <div class="form-item form-item-wide"><label>项目备注</label><textarea id="cf-remark" rows="3">${escHtml(v('remark'))}</textarea></div>
+      <div class="form-item form-item-wide"><label>客户特殊要求</label><textarea id="cf-specialRequirements" rows="3">${escHtml(v('specialRequirements'))}</textarea></div>
+      <div class="form-item"><label><input type="checkbox" id="cf-isKeyCustomer" ${v('isKeyCustomer')?'checked':''}> 重点客户</label></div>
+      <div class="form-item"><label><input type="checkbox" id="cf-isRenewalCustomer" ${v('isRenewalCustomer')?'checked':''}> 续费客户</label></div>
+    </div></div>
+    <div class="form-actions"><button class="btn-primary" onclick="submitContractForm('${id||''}')">${c?'保存修改':'提交新增'}</button><button class="btn-cancel" onclick="navigate('contracts')">取消</button></div>
+  </div>`;
+}
+function submitContractForm(editId) {
+  const g = id => document.getElementById(id).value;
+  const gc = id => document.getElementById(id).checked;
+  const customerName = g('cf-customerName'), projectName = g('cf-projectName'), contractNo = g('cf-contractNo');
+  if (!customerName || !projectName || !contractNo) { alert('请填写客户名称、项目名称和合同编号'); return; }
+  const amt = Number(g('cf-contractAmount')), rcv = Number(g('cf-receivedAmount'));
+  const data = { customerName, projectName, contractNo, province:g('cf-province'), city:g('cf-city'), district:g('cf-district'), region:g('cf-region'), contractAmount:amt, receivedAmount:rcv, unpaidAmount:amt-rcv, startDate:g('cf-startDate'), endDate:g('cf-endDate'), status:g('cf-status'), contactPerson:g('cf-contactPerson'), contactPhone:g('cf-contactPhone'), contactWechat:g('cf-contactWechat'), salesPerson:g('cf-salesPerson'), servicePerson:g('cf-servicePerson'), remark:g('cf-remark'), specialRequirements:g('cf-specialRequirements'), isKeyCustomer:gc('cf-isKeyCustomer'), isRenewalCustomer:gc('cf-isRenewalCustomer'), contractType:g('cf-contractType'), renewalStatus:g('cf-renewalStatus') };
+  if (editId) {
+    const idx = appData.contracts.findIndex(c=>c.id===editId);
+    if (idx>=0) { appData.contracts[idx] = {...appData.contracts[idx], ...data, updatedAt:now()}; }
+    appData.operationLogs.unshift({id:genId(),action:'修改',target:'合同',detail:`修改合同：${customerName}-${projectName}`,operator:'本机用户',createdAt:now()});
+    alert('合同修改成功');
+  } else {
+    appData.contracts.unshift({...data, id:genId(), createdAt:now(), updatedAt:now()});
+    appData.operationLogs.unshift({id:genId(),action:'新增',target:'合同',detail:`新增合同：${customerName}-${projectName}`,operator:'本机用户',createdAt:now()});
+    alert('合同新增成功');
+  }
+  saveData(); navigate('contracts');
+}
+
+// ===== CONTRACT DETAIL =====
+function renderContractDetail() {
+  const c = appData.contracts.find(x=>x.id===currentDetail);
+  if (!c) return '<div class="empty-text">合同不存在</div>';
+  const pays = appData.payments.filter(p=>p.contractId===c.id);
+  const follows = appData.followUps.filter(f=>f.contractId===c.id);
+  const atts = appData.attachments.filter(a=>a.contractId===c.id);
+  const dr = getDaysRemaining(c.endDate), ds = getDaysServed(c.startDate);
+  const pct = c.contractAmount>0 ? (c.receivedAmount/c.contractAmount*100).toFixed(0) : 0;
+  return `
+  <div class="page-header"><h2>合同详情</h2><div class="header-actions"><button class="btn-primary" onclick="navigate('contract-form','${c.id}')">编辑</button><button class="btn-danger" onclick="deleteContract('${c.id}')">删除</button><button class="btn-back" onclick="navigate('contracts')">返回列表</button></div></div>
+  <div class="detail-grid">
+    <div class="detail-card"><h3>基本信息</h3><div class="info-grid">
+      <div class="info-item"><span class="info-label">客户名称</span><span class="info-value">${c.customerName}</span></div>
+      <div class="info-item"><span class="info-label">项目名称</span><span class="info-value">${c.projectName}</span></div>
+      <div class="info-item"><span class="info-label">合同编号</span><span class="info-value td-mono">${c.contractNo}</span></div>
+      <div class="info-item"><span class="info-label">合同类型</span><span class="info-value">${c.contractType}</span></div>
+      <div class="info-item"><span class="info-label">服务地区</span><span class="info-value">${c.province} ${c.city} ${c.district}</span></div>
+      <div class="info-item"><span class="info-label">所属战区</span><span class="info-value">${c.region}</span></div>
+      <div class="info-item"><span class="info-label">合同状态</span><span class="status-tag ${getStatusClass(c.status)}">${c.status}</span></div>
+      <div class="info-item"><span class="info-label">续约状态</span><span class="info-value">${c.renewalStatus}</span></div>
+    </div></div>
+    <div class="detail-card"><h3>金额信息</h3>
+      <div class="amount-summary"><div class="amount-item"><span class="amount-value">${formatWan(c.contractAmount)}</span><span class="amount-label">合同总额</span></div><div class="amount-item amount-green"><span class="amount-value">${formatWan(c.receivedAmount)}</span><span class="amount-label">已收款</span></div><div class="amount-item amount-red"><span class="amount-value">${formatWan(c.unpaidAmount)}</span><span class="amount-label">未收款</span></div></div>
+      <div class="progress-bar"><div class="progress-fill" style="width:${pct}%"></div></div><p class="progress-text">回款进度 ${pct}%</p>
+    </div>
+    <div class="detail-card"><h3>服务周期</h3><div class="info-grid">
+      <div class="info-item"><span class="info-label">开始时间</span><span class="info-value">${c.startDate}</span></div>
+      <div class="info-item"><span class="info-label">结束时间</span><span class="info-value">${c.endDate}</span></div>
+      <div class="info-item"><span class="info-label">已服务</span><span class="info-value">${ds} 天</span></div>
+      <div class="info-item"><span class="info-label">剩余</span><span class="info-value" style="${dr<=30?'color:var(--warning);font-weight:500':''}">${dr>0?dr+' 天':'已过期 '+Math.abs(dr)+' 天'}</span></div>
+    </div></div>
+    <div class="detail-card"><h3>联系人</h3><div class="info-grid">
+      <div class="info-item"><span class="info-label">联系人</span><span class="info-value">${c.contactPerson}</span></div>
+      <div class="info-item"><span class="info-label">电话</span><span class="info-value">${c.contactPhone}</span></div>
+      <div class="info-item"><span class="info-label">微信/邮箱</span><span class="info-value">${c.contactWechat||'-'}</span></div>
+      <div class="info-item"><span class="info-label">销售负责人</span><span class="info-value">${c.salesPerson}</span></div>
+      <div class="info-item"><span class="info-label">服务负责人</span><span class="info-value">${c.servicePerson}</span></div>
+    </div></div>
+  </div>
+  ${c.remark||c.specialRequirements?`<div class="detail-card"><h3>备注信息</h3>${c.remark?`<p style="margin-bottom:8px"><strong>项目备注：</strong>${escHtml(c.remark)}</p>`:''}${c.specialRequirements?`<p><strong>特殊要求：</strong>${escHtml(c.specialRequirements)}</p>`:''}</div>`:''}
+  <div class="detail-card"><h3>收款记录 (${pays.length})</h3>${pays.length===0?'<p class="empty-text">暂无收款记录</p>':`<div class="table-wrapper"><table><thead><tr><th>收款金额</th><th>收款时间</th><th>方式</th><th>备注</th></tr></thead><tbody>${pays.map(p=>`<tr><td class="text-green">${formatWan(p.amount)}</td><td>${p.paymentDate}</td><td>${p.method}</td><td>${p.remark}</td></tr>`).join('')}</tbody></table></div>`}</div>
+  <div class="detail-card"><h3>跟进记录 (${follows.length})</h3>${follows.length===0?'<p class="empty-text">暂无跟进记录</p>':`<div class="timeline">${follows.map(f=>`<div class="timeline-item"><div class="timeline-dot"></div><div class="timeline-content"><div class="timeline-header"><span class="timeline-type">${f.type}</span><span class="timeline-date">${f.createdAt}</span><span class="timeline-person">${f.followPerson}</span></div><p class="timeline-text">${escHtml(f.content)}</p>${f.nextFollowDate?`<p class="timeline-next">下次跟进：${f.nextFollowDate}</p>`:''}</div></div>`).join('')}</div>`}</div>
+  <div class="detail-card"><h3>附件 (${atts.length})</h3>${atts.length===0?'<p class="empty-text">暂无附件</p>':`<div class="table-wrapper"><table><thead><tr><th>文件名</th><th>分类</th><th>大小</th><th>备注</th><th>上传时间</th></tr></thead><tbody>${atts.map(a=>`<tr><td>${a.fileName}</td><td>${a.category}</td><td>${formatSize(a.fileSize)}</td><td>${a.remark||'-'}</td><td>${a.createdAt}</td></tr>`).join('')}</tbody></table></div>`}</div>`;
+}
+function deleteContract(id) {
+  const c = appData.contracts.find(x=>x.id===id);
+  if (!c) return;
+  if (!confirm(`确定要删除合同「${c.customerName} - ${c.projectName}」吗？`)) return;
+  if (!confirm('再次确认：删除后数据无法恢复，是否继续？')) return;
+  appData.contracts = appData.contracts.filter(x=>x.id!==id);
+  appData.operationLogs.unshift({id:genId(),action:'删除',target:'合同',detail:`删除合同：${c.customerName}-${c.projectName}`,operator:'本机用户',createdAt:now()});
+  saveData(); navigate('contracts');
+}
+
+// ===== EXPIRING =====
+function renderExpiring() {
+  const c = appData.contracts;
+  const d7 = c.filter(x=>{const d=getDaysRemaining(x.endDate);return d>=0&&d<=7&&x.status!=='已终止'&&x.status!=='已续约';}).length;
+  const d15 = c.filter(x=>{const d=getDaysRemaining(x.endDate);return d>=0&&d<=15&&x.status!=='已终止'&&x.status!=='已续约';}).length;
+  const d30 = c.filter(x=>{const d=getDaysRemaining(x.endDate);return d>=0&&d<=30&&x.status!=='已终止'&&x.status!=='已续约';}).length;
+  const expired = c.filter(x=>getDaysRemaining(x.endDate)<0&&x.status!=='已终止'&&x.status!=='已续约');
+  const expiring = c.filter(x=>{const d=getDaysRemaining(x.endDate);return d>=0&&d<=90&&x.status!=='已终止'&&x.status!=='已续约';}).sort((a,b)=>getDaysRemaining(a.endDate)-getDaysRemaining(b.endDate));
+  function daysClass(d){if(d<=7)return'days-critical';if(d<=15)return'days-warning-badge';return'days-normal';}
+  return `
+  <div class="page-header"><h2>到期提醒</h2></div>
+  <div class="expiring-summary">
+    <div class="summary-item summary-red"><span class="summary-value">${d7}</span><span class="summary-label">7天内到期</span></div>
+    <div class="summary-item summary-orange"><span class="summary-value">${d15}</span><span class="summary-label">15天内到期</span></div>
+    <div class="summary-item summary-yellow"><span class="summary-value">${d30}</span><span class="summary-label">30天内到期</span></div>
+    <div class="summary-item summary-dark"><span class="summary-value">${expired.length}</span><span class="summary-label">已过期未续约</span></div>
+  </div>
+  <div class="section-title">即将到期合同 (${expiring.length})</div>
+  ${expiring.length===0?'<div class="empty-text" style="background:white;border-radius:8px;border:1px solid var(--border-color);padding:40px">当前无即将到期合同</div>':`<div class="table-wrapper"><table><thead><tr><th>客户名称</th><th>项目名称</th><th>到期时间</th><th>剩余天数</th><th>合同金额</th><th>续约状态</th><th>销售</th><th>操作</th></tr></thead><tbody>${expiring.map(x=>{const d=getDaysRemaining(x.endDate);return`<tr><td class="td-customer">${x.customerName}</td><td>${x.projectName}</td><td>${x.endDate}</td><td><span class="days-badge ${daysClass(d)}">${d} 天</span></td><td>${formatWan(x.contractAmount)}</td><td>${x.renewalStatus}</td><td>${x.salesPerson}</td><td><button class="btn-link" onclick="navigate('contract-detail','${x.id}')">详情</button></td></tr>`;}).join('')}</tbody></table></div>`}
+  ${expired.length>0?`<div class="section-title section-danger" style="margin-top:24px">已过期未续约 (${expired.length})</div><div class="table-wrapper"><table><thead><tr><th>客户名称</th><th>项目名称</th><th>到期时间</th><th>过期天数</th><th>合同金额</th><th>续约状态</th><th>销售</th><th>操作</th></tr></thead><tbody>${expired.map(x=>`<tr class="row-expired"><td class="td-customer">${x.customerName}</td><td>${x.projectName}</td><td>${x.endDate}</td><td class="text-red">${Math.abs(getDaysRemaining(x.endDate))} 天</td><td>${formatWan(x.contractAmount)}</td><td>${x.renewalStatus}</td><td>${x.salesPerson}</td><td><button class="btn-link" onclick="navigate('contract-detail','${x.id}')">详情</button></td></tr>`).join('')}</tbody></table></div>`:''}`;
+}
+
+// ===== PAYMENTS =====
+function renderPayments() {
+  const c = appData.contracts, p = appData.payments;
+  const totalAmt = c.reduce((s,x)=>s+x.contractAmount,0);
+  const totalRcv = c.reduce((s,x)=>s+x.receivedAmount,0);
+  const totalUnp = c.reduce((s,x)=>s+x.unpaidAmount,0);
+  const unpaidCount = c.filter(x=>x.unpaidAmount>0).length;
+  return `
+  <div class="page-header"><h2>收款管理</h2><button class="btn-primary" onclick="showPaymentModal()">+ 添加收款</button></div>
+  <div class="payment-summary">
+    <div class="pay-stat"><span class="pay-stat-value">${formatWan(totalAmt)}</span><span class="pay-stat-label">合同总额</span></div>
+    <div class="pay-stat pay-stat-green"><span class="pay-stat-value">${formatWan(totalRcv)}</span><span class="pay-stat-label">已收款</span></div>
+    <div class="pay-stat pay-stat-red"><span class="pay-stat-value">${formatWan(totalUnp)}</span><span class="pay-stat-label">未收款</span></div>
+    <div class="pay-stat"><span class="pay-stat-value">${unpaidCount}</span><span class="pay-stat-label">未完全回款合同</span></div>
+  </div>
+  <div class="table-wrapper"><table><thead><tr><th>客户名称</th><th>项目名称</th><th>合同金额</th><th>已收款</th><th>未收款</th><th>回款进度</th><th>收款次数</th></tr></thead><tbody>${c.map(x=>{const cp=p.filter(pp=>pp.contractId===x.id);const pct=x.contractAmount>0?(x.receivedAmount/x.contractAmount*100):0;return`<tr><td class="td-customer">${x.customerName}</td><td>${x.projectName}</td><td>${formatWan(x.contractAmount)}</td><td class="text-green">${formatWan(x.receivedAmount)}</td><td class="${x.unpaidAmount>0?'text-red':''}">${x.unpaidAmount>0?formatWan(x.unpaidAmount):'-'}</td><td><div class="mini-progress"><div class="mini-progress-fill" style="width:${pct}%"></div></div><span class="progress-pct">${pct.toFixed(0)}%</span></td><td>${cp.length} 次</td></tr>`;}).join('')}</tbody></table></div>
+  <div class="section-title">收款流水 (最近 ${p.length} 条)</div>
+  <div class="table-wrapper"><table><thead><tr><th>合同</th><th>收款金额</th><th>收款时间</th><th>方式</th><th>备注</th></tr></thead><tbody>${p.slice(0,20).map(pp=>{const ct=c.find(x=>x.id===pp.contractId);return`<tr><td>${ct?ct.customerName+' - '+ct.projectName:'-'}</td><td class="text-green">${formatWan(pp.amount)}</td><td>${pp.paymentDate}</td><td>${pp.method}</td><td>${pp.remark}</td></tr>`;}).join('')}</tbody></table></div>`;
+}
+function showPaymentModal() {
+  const unpaid = appData.contracts.filter(c=>c.unpaidAmount>0);
+  showModal(`<h3>添加收款记录</h3>
+    <div class="form-item"><label>选择合同 *</label><select id="pm-contract"><option value="">请选择合同</option>${unpaid.map(c=>`<option value="${c.id}">${c.customerName} - ${c.projectName} (未收 ${formatWan(c.unpaidAmount)})</option>`).join('')}</select></div>
+    <div class="form-item"><label>收款金额（元）*</label><input type="number" id="pm-amount" placeholder="请输入金额"></div>
+    <div class="form-item"><label>收款时间</label><input type="date" id="pm-date" value="${today()}"></div>
+    <div class="form-item"><label>收款方式</label><select id="pm-method"><option>银行转账</option><option>支票</option><option>现金</option><option>其他</option></select></div>
+    <div class="form-item"><label>备注</label><input id="pm-remark" placeholder="备注说明"></div>
+    <div class="modal-actions"><button class="btn-primary" onclick="submitPayment()">确认收款</button><button class="btn-cancel" onclick="closeModal()">取消</button></div>`);
+}
+function submitPayment() {
+  const cid = document.getElementById('pm-contract').value;
+  const amt = Number(document.getElementById('pm-amount').value);
+  if (!cid||!amt) { alert('请选择合同并填写收款金额'); return; }
+  appData.payments.unshift({id:genId(),contractId:cid,amount:amt,paymentDate:document.getElementById('pm-date').value,method:document.getElementById('pm-method').value,remark:document.getElementById('pm-remark').value,createdAt:now()});
+  const ci = appData.contracts.findIndex(c=>c.id===cid);
+  if (ci>=0) { appData.contracts[ci].receivedAmount += amt; appData.contracts[ci].unpaidAmount = appData.contracts[ci].contractAmount - appData.contracts[ci].receivedAmount; }
+  appData.operationLogs.unshift({id:genId(),action:'收款',target:'收款记录',detail:`收款 ${formatWan(amt)}`,operator:'本机用户',createdAt:now()});
+  saveData(); closeModal(); navigate('payments'); alert('收款记录添加成功');
+}
+
+// ===== CUSTOMERS =====
+let selectedCustomer = null;
+function renderCustomers() {
+  const c = appData.contracts;
+  const custMap = {};
+  c.forEach(x => { if(!custMap[x.customerName]) custMap[x.customerName]=[]; custMap[x.customerName].push(x); });
+  const customers = Object.entries(custMap).map(([name,cts])=>({name,contracts:cts,totalAmount:cts.reduce((s,x)=>s+x.contractAmount,0),totalReceived:cts.reduce((s,x)=>s+x.receivedAmount,0),isKey:cts.some(x=>x.isKeyCustomer),region:cts[0].region,contactPerson:cts[0].contactPerson,contactPhone:cts[0].contactPhone}));
+  const sel = selectedCustomer ? customers.find(x=>x.name===selectedCustomer) : null;
+  return `
+  <div class="page-header"><h2>客户管理</h2></div>
+  <div class="customers-layout">
+    <div class="customer-list-panel"><div class="panel-header">客户列表 (${customers.length})</div>${customers.map(cu=>`<div class="customer-item${selectedCustomer===cu.name?' customer-item-active':''}" onclick="selectedCustomer='${cu.name.replace(/'/g,"\\'")}';renderPage()"><div class="customer-item-name">${cu.name}${cu.isKey?'<span class="key-badge">重点</span>':''}</div><div class="customer-item-meta">${cu.region} · ${cu.contracts.length}个合同 · ${formatWan(cu.totalAmount)}</div></div>`).join('')}</div>
+    <div class="customer-detail-panel">${!sel?'<div class="empty-panel">请从左侧选择客户查看详情</div>':`
+      <div class="customer-info-card"><h3>${sel.name} ${sel.isKey?'<span class="key-badge">重点客户</span>':''}</h3><div class="customer-meta-grid"><div><span class="meta-label">联系人</span><span>${sel.contactPerson}</span></div><div><span class="meta-label">电话</span><span>${sel.contactPhone}</span></div><div><span class="meta-label">战区</span><span>${sel.region}</span></div><div><span class="meta-label">合同数</span><span>${sel.contracts.length}</span></div><div><span class="meta-label">合同总额</span><span class="text-blue">${formatWan(sel.totalAmount)}</span></div><div><span class="meta-label">已收款</span><span class="text-green">${formatWan(sel.totalReceived)}</span></div></div></div>
+      <div class="customer-contracts-card"><h4 style="font-size:15px;margin-bottom:12px">合同列表</h4><div class="table-wrapper"><table><thead><tr><th>项目</th><th>金额</th><th>状态</th><th>到期</th></tr></thead><tbody>${sel.contracts.map(x=>`<tr><td>${x.projectName}</td><td>${formatWan(x.contractAmount)}</td><td><span class="status-tag ${getStatusClass(x.status)}">${x.status}</span></td><td>${x.endDate}</td></tr>`).join('')}</tbody></table></div></div>
+      <div class="customer-contracts-card"><div class="card-header" style="display:flex;justify-content:space-between;align-items:center;margin-bottom:12px"><h4 style="font-size:15px">跟进记录</h4><button class="btn-small" onclick="showFollowModal()">+ 添加跟进</button></div>${(()=>{const fs=appData.followUps.filter(f=>{const cids=sel.contracts.map(x=>x.id);return cids.includes(f.contractId);});return fs.length===0?'<p class="empty-text">暂无跟进记录</p>':`<div class="timeline">${fs.map(f=>`<div class="timeline-item"><div class="timeline-dot"></div><div class="timeline-content"><div class="timeline-header"><span class="timeline-type">${f.type}</span><span class="timeline-date">${f.createdAt}</span><span class="timeline-person">${f.followPerson}</span></div><p class="timeline-text">${escHtml(f.content)}</p>${f.nextFollowDate?`<p class="timeline-next">下次跟进：${f.nextFollowDate}</p>`:''}</div></div>`).join('')}</div>`;})()}</div>`}
+    </div>
+  </div>`;
+}
+function showFollowModal() {
+  showModal(`<h3>添加跟进记录 - ${selectedCustomer}</h3>
+    <div class="form-item"><label>跟进类型</label><select id="fw-type"><option>客户拜访</option><option>需求沟通</option><option>续费沟通</option><option>投诉处理</option><option>满意度回访</option><option>其他</option></select></div>
+    <div class="form-item"><label>跟进内容 *</label><textarea id="fw-content" rows="4" placeholder="请输入跟进内容"></textarea></div>
+    <div class="form-item"><label>跟进人 *</label><input id="fw-person" placeholder="跟进人姓名"></div>
+    <div class="form-item"><label>下次跟进时间</label><input type="date" id="fw-next"></div>
+    <div class="modal-actions"><button class="btn-primary" onclick="submitFollow()">保存</button><button class="btn-cancel" onclick="closeModal()">取消</button></div>`);
+}
+function submitFollow() {
+  const content = document.getElementById('fw-content').value;
+  const person = document.getElementById('fw-person').value;
+  if (!content||!person) { alert('请填写跟进内容和跟进人'); return; }
+  const cust = appData.contracts.filter(c=>c.customerName===selectedCustomer);
+  appData.followUps.unshift({id:genId(),customerId:selectedCustomer,contractId:cust[0]?.id,type:document.getElementById('fw-type').value,content,followPerson:person,nextFollowDate:document.getElementById('fw-next').value||undefined,createdAt:now()});
+  saveData(); closeModal(); renderPage(); alert('跟进记录添加成功');
+}
+
+// ===== STATISTICS =====
+function renderStatistics() {
+  const c = appData.contracts;
+  const regionMap={};c.forEach(x=>{regionMap[x.region]=(regionMap[x.region]||0)+x.contractAmount;});
+  const regionData=Object.entries(regionMap).sort((a,b)=>b[1]-a[1]);
+  const maxR=Math.max(...regionData.map(r=>r[1]),1);
+  const custMap={};c.forEach(x=>{custMap[x.customerName]=(custMap[x.customerName]||0)+x.contractAmount;});
+  const custData=Object.entries(custMap).sort((a,b)=>b[1]-a[1]).slice(0,8);
+  const maxC=Math.max(...custData.map(r=>r[1]),1);
+  const salesMap={};c.forEach(x=>{if(!salesMap[x.salesPerson])salesMap[x.salesPerson]={amount:0,count:0,renewals:0};salesMap[x.salesPerson].amount+=x.contractAmount;salesMap[x.salesPerson].count++;if(x.isRenewalCustomer)salesMap[x.salesPerson].renewals++;});
+  const statusMap={};c.forEach(x=>{statusMap[x.status]=(statusMap[x.status]||0)+1;});
+  const svcMap={};c.forEach(x=>{svcMap[x.servicePerson]=(svcMap[x.servicePerson]||0)+1;});
+  const svcData=Object.entries(svcMap);const maxS=Math.max(...svcData.map(r=>r[1]),1);
+  return `
+  <div class="page-header"><h2>统计分析</h2></div>
+  <div class="charts-grid">
+    <div class="chart-card"><h3>按地区统计合同额</h3><div class="bar-chart">${regionData.map(([n,a])=>`<div class="bar-item"><div class="bar-value">${formatWan(a)}</div><div class="bar-fill" style="height:${Math.max(a/maxR*180,20)}px"></div><div class="bar-label">${n}</div></div>`).join('')}</div></div>
+    <div class="chart-card"><h3>合同状态分布</h3><div style="padding:20px 0">${Object.entries(statusMap).map(([s,v])=>`<div style="display:flex;align-items:center;margin-bottom:10px"><span class="status-tag ${getStatusClass(s)}" style="min-width:70px;text-align:center">${s}</span><div style="flex:1;height:20px;background:#f0f0f0;border-radius:4px;margin:0 12px;overflow:hidden"><div style="height:100%;background:var(--primary);width:${v/c.length*100}%;border-radius:4px"></div></div><span style="font-weight:600">${v}</span></div>`).join('')}</div></div>
+    <div class="chart-card"><h3>客户合同额排名</h3><div style="padding:10px 0">${custData.map(([n,a])=>`<div style="display:flex;align-items:center;margin-bottom:8px"><span style="width:120px;font-size:12px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap">${n}</span><div style="flex:1;height:18px;background:#f0f0f0;border-radius:4px;margin:0 8px;overflow:hidden"><div style="height:100%;background:#52c41a;width:${a/maxC*100}%;border-radius:4px"></div></div><span style="font-size:12px;font-weight:500">${formatWan(a)}</span></div>`).join('')}</div></div>
+    <div class="chart-card"><h3>服务负责人项目数</h3><div class="bar-chart">${svcData.map(([n,v])=>`<div class="bar-item"><div class="bar-value">${v}</div><div class="bar-fill" style="height:${Math.max(v/maxS*180,20)}px;background:linear-gradient(180deg, #722ed1 0%, #b37feb 100%);box-shadow:0 2px 8px rgba(114,46,209,0.3)"></div><div class="bar-label">${n}</div></div>`).join('')}</div></div>
+  </div>
+  <div class="detail-card"><h3>销售负责人业绩统计</h3><div class="table-wrapper"><table><thead><tr><th>销售</th><th>合同额</th><th>客户数</th><th>续费数</th></tr></thead><tbody>${Object.entries(salesMap).map(([n,d])=>`<tr><td class="td-customer">${n}</td><td class="text-blue">${formatWan(d.amount)}</td><td>${d.count}</td><td>${d.renewals}</td></tr>`).join('')}</tbody></table></div></div>`;
+}
+
+// ===== ATTACHMENTS =====
+function renderAttachments() {
+  const atts = appData.attachments;
+  return `
+  <div class="page-header"><h2>附件管理</h2><button class="btn-primary" onclick="showAttachmentModal()">+ 上传附件</button></div>
+  <div class="filter-bar"><label>分类筛选：</label><select id="att-filter" onchange="renderPage()"><option value="">全部分类</option><option>合同原件</option><option>报价单</option><option>验收材料</option><option>客户资料</option><option>其他</option></select><span class="filter-count">共 ${atts.length} 个附件</span></div>
+  <div class="attachments-grid">${atts.map(a=>{const ct=appData.contracts.find(c=>c.id===a.contractId);return`<div class="attachment-card"><div class="attachment-icon">${getFileIcon(a.fileType)}</div><div class="attachment-info"><div class="attachment-name">${a.fileName}</div><div class="attachment-meta"><span>${a.category}</span><span>${formatSize(a.fileSize)}</span></div><div class="attachment-contract">${ct?ct.customerName+' - '+ct.projectName:'-'}</div><div class="attachment-date">${a.createdAt}</div></div></div>`;}).join('')}</div>`;
+}
+function showAttachmentModal() {
+  showModal(`<h3>上传附件</h3><p style="font-size:12px;color:var(--warning);margin-bottom:16px">注：浏览器版本为模拟上传，文件不会实际保存</p>
+    <div class="form-item"><label>选择合同 *</label><select id="att-contract"><option value="">请选择合同</option>${appData.contracts.map(c=>`<option value="${c.id}">${c.customerName} - ${c.projectName}</option>`).join('')}</select></div>
+    <div class="form-item"><label>文件名 *</label><input id="att-filename" placeholder="例如：合同原件.pdf"></div>
+    <div class="form-item"><label>附件分类</label><select id="att-category"><option>合同原件</option><option>报价单</option><option>验收材料</option><option>客户资料</option><option>其他</option></select></div>
+    <div class="form-item"><label>备注说明</label><input id="att-remark" placeholder="附件说明"></div>
+    <div class="modal-actions"><button class="btn-primary" onclick="submitAttachment()">确认上传</button><button class="btn-cancel" onclick="closeModal()">取消</button></div>`);
+}
+function submitAttachment() {
+  const cid=document.getElementById('att-contract').value;
+  const fn=document.getElementById('att-filename').value;
+  if(!cid||!fn){alert('请选择合同并填写文件名');return;}
+  const ext=fn.split('.').pop().toLowerCase();
+  appData.attachments.unshift({id:genId(),contractId:cid,fileName:fn,fileType:ext,fileSize:Math.floor(Math.random()*2000000)+100000,category:document.getElementById('att-category').value,remark:document.getElementById('att-remark').value,filePath:`/mock/${fn}`,createdAt:today()});
+  saveData();closeModal();renderPage();alert('附件记录已添加');
+}
+
+// ===== IMPORT/EXPORT =====
+function renderImportExport() {
+  const c = appData.contracts;
+  return `
+  <div class="page-header"><h2>导入导出</h2></div>
+  <div class="ie-section"><h3>📤 数据导出</h3><div class="ie-grid">
+    <div class="ie-card" onclick="exportAllCSV()"><div class="ie-icon">📋</div><div class="ie-title">导出全部合同</div><div class="ie-desc">导出所有合同数据为 CSV 文件</div><div class="ie-count">${c.length} 条数据</div></div>
+    <div class="ie-card" onclick="exportExpiringCSV()"><div class="ie-icon">⏰</div><div class="ie-title">导出即将到期合同</div><div class="ie-desc">导出 30 天内到期的合同</div></div>
+    <div class="ie-card" onclick="exportUnpaidCSV()"><div class="ie-icon">💰</div><div class="ie-title">导出未回款合同</div><div class="ie-desc">导出所有未完全回款的合同</div><div class="ie-count">${c.filter(x=>x.unpaidAmount>0).length} 条</div></div>
+  </div></div>
+  <div class="ie-section"><h3>📥 数据导入</h3><div class="ie-grid">
+    <div class="ie-card" onclick="alert('请使用备份恢复功能中的 JSON 导入')"><div class="ie-icon">📊</div><div class="ie-title">导入数据</div><div class="ie-desc">从 JSON 备份文件导入数据</div></div>
+  </div></div>`;
+}
+function exportCSV(data, filename) {
+  if(!data.length){alert('没有数据可导出');return;}
+  const headers=Object.keys(data[0]);
+  const csv=[headers.join(','),...data.map(row=>headers.map(h=>{const v=String(row[h]??'');return v.includes(',')?`"${v}"`:v;}).join(','))].join('\n');
+  const blob=new Blob(['\ufeff'+csv],{type:'text/csv;charset=utf-8;'});
+  const url=URL.createObjectURL(blob);const a=document.createElement('a');a.href=url;a.download=filename;a.click();URL.revokeObjectURL(url);
+}
+function exportAllCSV() {
+  exportCSV(appData.contracts.map(c=>({客户名称:c.customerName,项目名称:c.projectName,合同编号:c.contractNo,战区:c.region,合同金额:c.contractAmount,已收款:c.receivedAmount,未收款:c.unpaidAmount,开始时间:c.startDate,结束时间:c.endDate,状态:c.status,销售:c.salesPerson,服务:c.servicePerson})),`合同列表_${today()}.csv`);
+}
+function exportExpiringCSV() {
+  const exp=appData.contracts.filter(c=>{const d=getDaysRemaining(c.endDate);return d>=0&&d<=30;});
+  exportCSV(exp.map(c=>({客户名称:c.customerName,项目名称:c.projectName,到期时间:c.endDate,合同金额:c.contractAmount,续约状态:c.renewalStatus,销售:c.salesPerson})),`即将到期合同_${today()}.csv`);
+}
+function exportUnpaidCSV() {
+  const unp=appData.contracts.filter(c=>c.unpaidAmount>0);
+  exportCSV(unp.map(c=>({客户名称:c.customerName,项目名称:c.projectName,合同金额:c.contractAmount,已收款:c.receivedAmount,未收款:c.unpaidAmount,销售:c.salesPerson})),`未回款合同_${today()}.csv`);
+}
+
+// ===== BACKUP =====
+function renderBackup() {
+  const c=appData.contracts,p=appData.payments,f=appData.followUps,a=appData.attachments;
+  return `
+  <div class="page-header"><h2>备份与恢复</h2></div>
+  <div class="backup-stats">
+    <div class="backup-stat-card"><span class="backup-stat-value">${c.length}</span><span class="backup-stat-label">合同数据</span></div>
+    <div class="backup-stat-card"><span class="backup-stat-value">${p.length}</span><span class="backup-stat-label">收款记录</span></div>
+    <div class="backup-stat-card"><span class="backup-stat-value">${f.length}</span><span class="backup-stat-label">跟进记录</span></div>
+    <div class="backup-stat-card"><span class="backup-stat-value">${a.length}</span><span class="backup-stat-label">附件记录</span></div>
+    <div class="backup-stat-card"><span class="backup-stat-value">${appData.operationLogs.length}</span><span class="backup-stat-label">操作日志</span></div>
+  </div>
+  <div class="backup-actions">
+    <button class="btn-primary" onclick="exportJSON()">📦 导出数据包 (JSON)</button>
+    <button class="btn-export" onclick="importJSON()">📥 导入数据包</button>
+    <button class="btn-danger" onclick="resetData()">🗑️ 重置数据</button>
+  </div>
+  <div class="backup-info"><p>💡 数据存储在浏览器 localStorage 中，清除浏览器数据会丢失。</p><p>💡 建议定期导出 JSON 数据包进行备份。</p></div>`;
+}
+function exportJSON() {
+  const blob=new Blob([JSON.stringify(appData,null,2)],{type:'application/json'});
+  const url=URL.createObjectURL(blob);const a=document.createElement('a');a.href=url;a.download=`合同管理备份_${today()}.json`;a.click();URL.revokeObjectURL(url);alert('数据包导出成功！');
+}
+function importJSON() {
+  const input=document.createElement('input');input.type='file';input.accept='.json';
+  input.onchange=e=>{const file=e.target.files[0];if(!file)return;const reader=new FileReader();reader.onload=ev=>{try{const data=JSON.parse(ev.target.result);if(data.contracts){appData=data;saveData();renderPage();alert('数据导入成功！');}else{alert('无效的备份文件');}}catch(err){alert('文件解析失败：'+err.message);}};reader.readAsText(file);};
+  input.click();
+}
+function resetData() {
+  if(!confirm('确定要重置所有数据吗？此操作不可恢复！'))return;
+  if(!confirm('再次确认：所有合同、收款、跟进记录都将被清除！'))return;
+  appData=getDefaultData();saveData();renderPage();alert('数据已重置为初始状态');
+}
+
+// ===== SETTINGS =====
+function renderSettings() {
+  const logs = appData.operationLogs;
+  return `
+  <div class="page-header"><h2>系统设置</h2></div>
+  <div class="settings-section"><h3>到期提醒</h3>
+    <div class="setting-item"><div class="setting-info"><label>默认提醒天数</label><p class="setting-desc">合同到期前多少天开始提醒</p></div><div class="setting-control"><select><option value="7">7 天</option><option value="15">15 天</option><option value="30" selected>30 天</option><option value="60">60 天</option><option value="90">90 天</option></select></div></div>
+  </div>
+  <div class="settings-section"><h3>数据存储</h3>
+    <div class="setting-item"><div class="setting-info"><label>存储方式</label><p class="setting-desc">当前数据存储在浏览器 localStorage 中</p></div><div class="setting-control"><span style="font-size:13px;color:var(--text-tertiary)">浏览器本地存储</span></div></div>
+  </div>
+  <div class="settings-section"><h3>关于系统</h3>
+    <div class="about-info"><p><strong>合同管理系统</strong> v1.0.0 (HTML版)</p><p>纯前端实现，数据存储在浏览器 localStorage</p><p>支持导出/导入 JSON 数据包进行备份和迁移</p></div>
+  </div>
+  <div class="settings-section"><h3>操作日志（最近 10 条）</h3>
+    <div class="table-wrapper"><table><thead><tr><th>操作</th><th>对象</th><th>详情</th><th>操作人</th><th>时间</th></tr></thead><tbody>${logs.slice(0,10).map(l=>`<tr><td><span style="display:inline-block;padding:1px 6px;border-radius:3px;font-size:11px;font-weight:500;${l.action==='新增'?'background:#f6ffed;color:#52c41a':l.action==='修改'?'background:#e6f4ff;color:#1890ff':l.action==='删除'?'background:#fff2f0;color:#ff4d4f':'background:#fff7e6;color:#fa8c16'}">${l.action}</span></td><td>${l.target}</td><td>${l.detail}</td><td>${l.operator}</td><td class="td-mono">${l.createdAt}</td></tr>`).join('')}</tbody></table></div>
+  </div>`;
+}
+
+// ===== INIT =====
+initNav();
+renderPage();
+</script>
+</body>
+</html>
